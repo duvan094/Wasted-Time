@@ -1,5 +1,5 @@
 # Wasted-Time
-A silly project to keep us from writing on our thesis. ;)
+A silly project to keep us from writing on our thesis. 😉 
 
 The project came to fruition on a especially slow day while we were trying to write our thesis. 
 It started as a simple collaboration on Syncfiddle, which led to creating a counter for how much time we spent procrastinating.
