@@ -63,7 +63,9 @@ const gifArr = [
   "t6lGyl8QLylqFQJkiA",
   "JIX9t2j0ZTN9S",
   "1d7F9xyq6j7C1ojbC5",
-  "VOq7iem25Z94Y"
+  "VOq7iem25Z94Y",
+  "k6Wm3KbGfY7rk6PK4L",
+  "nEXmNl3uha5YA"
 ];
 
 const gifLoadedArr = [];
