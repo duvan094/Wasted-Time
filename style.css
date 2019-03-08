@@ -55,6 +55,10 @@ h1 {
 h1,h2,p,small{
   color:#FFF;
   transition:color 1s ease-in-out;
+  -webkit-user-select: none; /* Safari */
+  -moz-user-select: none; /* Firefox */
+  -ms-user-select: none; /* IE10+/Edge */
+  user-select: none; /* Standard */
 }
 
 #number{
