@@ -3,6 +3,8 @@ const decBtn = document.getElementById("decButton");
 
 const btnContainer = document.getElementById("btnContainer");
 
+const opacityIncValue = 0.001;
+
 const text = document.querySelectorAll("H1, H2,p");
 const background = document.querySelector("body");
 
@@ -124,7 +126,6 @@ function gifMove() {
     gif.style.left = gif.xPos + "px";
     gif.style.top = gif.yPos + "px";
 
-    let opacityIncValue = 0.00001;
 
     if (opacity < 0.8) {
       opacity += opacityIncValue;
