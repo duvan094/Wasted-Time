@@ -52,16 +52,9 @@ h1 {
   text-transform: uppercase;
 }
 
-h1,
-h2,
-p,
-small {
-  color: #fff;
-  transition: color 1s ease-in-out;
-  -webkit-user-select: none; /* Safari */
-  -moz-user-select: none; /* Firefox */
-  -ms-user-select: none; /* IE10+/Edge */
-  user-select: none; /* Standard */
+h1,h2,p,small{
+  color:#FFF;
+  transition:color 1s ease-in-out;
 }
 
 #number {

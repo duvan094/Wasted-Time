@@ -179,18 +179,73 @@ window.addEventListener("mousemove", function(event) {
     let newX = event.clientX;
     let newY = event.clientY;
 
-    x = newX - mousePosX;
-    y = newY - mousePosY;
+    gif.xPos = newX - mousePosX;
+    gif.yPos = newY - mousePosY;
 
-    gif.style.top = y + "px";
-    gif.style.left = x + "px";
+    gif.style.top = gif.yPos + "px";
+    gif.style.left = gif.xPos + "px";
 
     oldX = newX;
     oldY = newY;
+
+    squeeze(event);
+
   }
 });
 
+function squeeze(evt){
+  if(gif.xPos <= 0){
+    let procent = Math.floor((evt.clientX/gif.offsetWidth)*100)/100;
+    width = procent > 0.5 ? procent : 0.5;
+    height = 2 - width;
+    gif.xPos = 0;
+    gif.style.left = gif.xPos;
+    gif.style.transform = "scale(" + width + "," + height + ")";
+    gif.style.transformOrigin = "0 0";
+    gif.style.transition = "";
+  }else if(gif.xPos + gif.offsetWidth >= window.innerWidth){
+    let procent = Math.floor((Math.abs(evt.clientX-window.innerWidth)/gif.offsetWidth)*100)/100;
+    width = procent > 0.5 ? procent : 0.5;
+    height = 2 - width;
+    gif.style.transform = "scale(" + width + "," + height + ")";
+    gif.style.transformOrigin = "100% 0";
+    gif.xPos = window.innerWidth - gif.offsetWidth;
+
+    gif.style.left = gif.xPos + "px";
+    gif.style.transition = "";
+
+  }else if(gif.yPos <= 0){
+    let procent = Math.floor((evt.clientY/gif.offsetHeight)*100)/100;
+    height = procent > 0.5 ? procent : 0.5;
+    width = 2 - height;
+    gif.yPos = 0;
+    gif.style.top = gif.yPos;
+    gif.style.transform = "scale(" + width + "," + height + ")";
+    gif.style.transformOrigin = "0 0";
+    gif.style.transition = "";
+  }else if(gif.yPos + gif.offsetHeight >= window.innerHeight){
+    let procent = Math.floor((Math.abs(evt.clientY-window.innerHeight)/gif.offsetHeight)*100)/100;
+    height = procent > 0.5 ? procent : 0.5;
+    width = 2 - height;
+    gif.style.transform = "scale(" + width + "," + height + ")";
+    gif.style.transformOrigin = "0 100%";
+    gif.yPos = window.innerHeight - gif.offsetHeight;
+
+    gif.style.top = gif.yPos + "px";
+    gif.style.transition = "";
+
+  }else{
+    gif.style.transform = "scale(1,1)";
+     gif.style.transformOrigin = "50% 50%";
+  }
+
+}
+
+
 window.addEventListener("mouseup", function(event) {
+
+  squeeze(event);
+
   if (gif.moving) {
     gif.moving = false;
     gif.classList.remove("dragging");
