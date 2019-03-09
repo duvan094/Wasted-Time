@@ -1,6 +1,17 @@
 @import url("https://fonts.googleapis.com/css?family=Open+Sans");
 
+@font-face{
+  font-family: "Comic Neue";
+  src: url(fonts/ComicNeue-Bold.ttf) format("truetype");
+}
+
+*{
+  font-family: "Comic Neue", "Comic Sans MS", cursive, sans-serif;
+}
+
+
 body {
+
   overflow: hidden;
   opacity: 1;
   margin: 0;
@@ -9,6 +20,7 @@ body {
   width: 100%;
   background: #aa0000;
   transition: background 1s ease-in-out, 1s opacity ease-out;
+    margin-top:22px;
 }
 
 .skew {
@@ -44,7 +56,6 @@ main {
   max-width: 520px;
   margin: auto;
   text-align: center;
-  font-family: "Comic Sans MS", cursive, sans-serif;
 }
 
 h1 {
@@ -56,6 +67,8 @@ h1,h2,p,small{
   color:#FFF;
   transition:color 1s ease-in-out;
 }
+
+
 
 #number {
   font-weight: 600;
@@ -104,6 +117,10 @@ small.footer {
   right: 0;
   padding: 22px;
   z-index: 150;
+}
+
+small.footer a{
+  font-family: "Open Sans", sans-serif;
 }
 
 small.footer a {
@@ -251,4 +268,41 @@ small.footer a {
   100% {
     background: rgba(255, 0, 0, 1);
   }
+}
+
+@media(max-width:520px){
+
+  body{
+
+  }
+
+  main{
+    display: block;
+    padding:11px;
+    box-sizing: border-box;
+  }
+
+  h1{
+    font-size:1.5em;
+    padding:1em;
+  }
+
+  #number {
+    font-weight: 600;
+    font-size: 2em;
+  }
+
+  button{
+    width:100%;
+  }
+
+  #gif {
+    max-width: 200px;
+    max-height: 200px;
+  }
+
+  small.footer {
+    text-align: right;
+  }
+
 }

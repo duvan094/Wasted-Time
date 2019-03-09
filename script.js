@@ -163,22 +163,62 @@ let oldX, oldY;
 let initialX, initialY;
 let mousePosX, mousePosY;
 
+gif.addEventListener("touchstart", function(event){
+  clientX = event.touches[0].clientX;
+  clientY = event.touches[0].clientY;
+
+  moveInit(clientX, clientY);
+}, false);
+
 gif.addEventListener("mousedown", function(event) {
+  moveInit(event.clientX, event.clientY);
+});
+
+let lastTouchX, lastTouchY;
+
+gif.addEventListener("touchmove", function(event){
+  clientX = event.touches[0].clientX;
+  clientY = event.touches[0].clientY;
+
+  lastTouchX = clientX;
+  lastTouchY = clientY;
+
+  moving(clientX, clientY);
+}, false);
+
+window.addEventListener("mousemove", function(event) {
+  moving(event.clientX, event.clientY);
+});
+
+gif.addEventListener("touchcancel", function(event){
+
+}, false);
+
+gif.addEventListener("touchend", function(event){
+  moveEnd(lastTouchX, lastTouchY);
+}, false);
+
+window.addEventListener("mouseup", function(event) {
+  moveEnd(event.clientX, event.clientY);
+});
+
+
+function moveInit(clientX, clientY){
   gif.moving = true;
   gif.className = "dragging";
-  oldX = initialX = event.clientX;
-  oldY = initialY = event.clientY;
+  oldX = initialX = clientX;
+  oldY = initialY = clientY;
 
   mousePosX = oldX - gif.getBoundingClientRect().left; //x position within the element.
   mousePosY = oldY - gif.getBoundingClientRect().top; //y position within the element.
-});
+}
 
-window.addEventListener("mousemove", function(event) {
+function moving(clientX, clientY){
   if (gif.moving) {
     let x;
     let y;
-    let newX = event.clientX;
-    let newY = event.clientY;
+    let newX = clientX;
+    let newY = clientY;
 
     gif.xPos = newX - mousePosX;
     gif.yPos = newY - mousePosY;
@@ -189,14 +229,15 @@ window.addEventListener("mousemove", function(event) {
     oldX = newX;
     oldY = newY;
 
-    squeeze(event);
+    squeeze(clientX, clientY);
 
   }
-});
+}
 
-function squeeze(evt){
+
+function squeeze(clientX, clientY){
   if(gif.xPos <= 0){
-    let procent = Math.floor((evt.clientX/gif.offsetWidth)*100)/100;
+    let procent = Math.floor((clientX/gif.offsetWidth)*100)/100;
     width = procent > 0.5 ? procent : 0.5;
     height = 2 - width;
     gif.xPos = 0;
@@ -205,7 +246,7 @@ function squeeze(evt){
     gif.style.transformOrigin = "0 0";
     gif.style.transition = "";
   }else if(gif.xPos + gif.offsetWidth >= window.innerWidth){
-    let procent = Math.floor((Math.abs(evt.clientX-window.innerWidth)/gif.offsetWidth)*100)/100;
+    let procent = Math.floor((Math.abs(clientX-window.innerWidth)/gif.offsetWidth)*100)/100;
     width = procent > 0.5 ? procent : 0.5;
     height = 2 - width;
     gif.style.transform = "scale(" + width + "," + height + ")";
@@ -216,7 +257,7 @@ function squeeze(evt){
     gif.style.transition = "";
 
   }else if(gif.yPos <= 0){
-    let procent = Math.floor((evt.clientY/gif.offsetHeight)*100)/100;
+    let procent = Math.floor((clientY/gif.offsetHeight)*100)/100;
     height = procent > 0.5 ? procent : 0.5;
     width = 2 - height;
     gif.yPos = 0;
@@ -225,7 +266,7 @@ function squeeze(evt){
     gif.style.transformOrigin = "0 0";
     gif.style.transition = "";
   }else if(gif.yPos + gif.offsetHeight >= window.innerHeight){
-    let procent = Math.floor((Math.abs(evt.clientY-window.innerHeight)/gif.offsetHeight)*100)/100;
+    let procent = Math.floor((Math.abs(clientY-window.innerHeight)/gif.offsetHeight)*100)/100;
     height = procent > 0.5 ? procent : 0.5;
     width = 2 - height;
     gif.style.transform = "scale(" + width + "," + height + ")";
@@ -242,65 +283,64 @@ function squeeze(evt){
 
 }
 
+function moveEnd(clientX, clientY){
+    squeeze(clientX, clientY);
 
-window.addEventListener("mouseup", function(event) {
+    if (gif.moving) {
+      gif.moving = false;
+      gif.classList.remove("dragging");
+      gif.xPos = oldX - mousePosX;
+      gif.yPos = oldY - mousePosY;
 
-  squeeze(event);
+      let xDiff = clientX - initialX;
+      let yDiff = clientY - initialY;
 
-  if (gif.moving) {
-    gif.moving = false;
-    gif.classList.remove("dragging");
-    gif.xPos = oldX - mousePosX;
-    gif.yPos = oldY - mousePosY;
+      let directionX, directionY;
 
-    let xDiff = event.clientX - initialX;
-    let yDiff = event.clientY - initialY;
+      /*See if which direction the gif is going*/
+      if (xDiff < 0) {
+        directionX = -1;
+      } else {
+        directionX = 1;
+      }
 
-    let directionX, directionY;
+      if (yDiff < 0) {
+        directionY = -1;
+      } else {
+        directionY = 1;
+      }
 
-    /*See if which direction the gif is going*/
-    if (xDiff < 0) {
-      directionX = -1;
-    } else {
-      directionX = 1;
+      /*Calculate the speed each direction should go*/
+      if (Math.abs(xDiff) < Math.abs(yDiff)) {
+        let procent = Math.abs(xDiff) / Math.abs(yDiff);
+
+        gif.xDir = directionX * (2 * gif.speed * procent);
+        gif.yDir = directionY * (2 * gif.speed * (1 - procent));
+      } else {
+        let procent = Math.abs(yDiff) / Math.abs(xDiff);
+        gif.xDir = directionX * (2 * gif.speed * (1 - procent));
+        gif.yDir = directionY * (2 * gif.speed * procent);
+      }
+
+      /*Check if the gif is outside the bounds of the window*/
+      if (gif.xPos + gif.offsetWidth > window.innerWidth) {
+        gif.xPos = window.innerWidth - gif.offsetWidth;
+        gif.style.left = gif.xPos + "px";
+      } else if (gif.xPos < 0) {
+        gif.xPos = 0;
+        gif.style.left = gif.xPos + "px";
+      }
+
+      if (gif.yPos > window.innerHeight - gif.offsetHeight) {
+        gif.yPos = window.innerHeight - gif.offsetHeight;
+        gif.style.top = gif.yPos + "px";
+      } else if (gif.yPos < 0) {
+        gif.yPos = 0;
+        gif.style.top = gif.yPos + "px";
+      }
     }
 
-    if (yDiff < 0) {
-      directionY = -1;
-    } else {
-      directionY = 1;
-    }
-
-    /*Calculate the speed each direction should go*/
-    if (Math.abs(xDiff) < Math.abs(yDiff)) {
-      let procent = Math.abs(xDiff) / Math.abs(yDiff);
-
-      gif.xDir = directionX * (2 * gif.speed * procent);
-      gif.yDir = directionY * (2 * gif.speed * (1 - procent));
-    } else {
-      let procent = Math.abs(yDiff) / Math.abs(xDiff);
-      gif.xDir = directionX * (2 * gif.speed * (1 - procent));
-      gif.yDir = directionY * (2 * gif.speed * procent);
-    }
-
-    /*Check if the gif is outside the bounds of the window*/
-    if (gif.xPos + gif.offsetWidth > window.innerWidth) {
-      gif.xPos = window.innerWidth - gif.offsetWidth;
-      gif.style.left = gif.xPos + "px";
-    } else if (gif.xPos < 0) {
-      gif.xPos = 0;
-      gif.style.left = gif.xPos + "px";
-    }
-
-    if (gif.yPos > window.innerHeight - gif.offsetHeight) {
-      gif.yPos = window.innerHeight - gif.offsetHeight;
-      gif.style.top = gif.yPos + "px";
-    } else if (gif.yPos < 0) {
-      gif.yPos = 0;
-      gif.style.top = gif.yPos + "px";
-    }
-  }
-});
+}
 
 function changeGif() {
   let newGif = gifLoadedArr[Math.floor(Math.random() * gifLoadedArr.length)];
