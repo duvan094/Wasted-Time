@@ -30,6 +30,13 @@ btnContainer.addEventListener("mouseover", function(event) {
   );
 
   btnContainer.style.transform = "translateX(0)";
+
+  btnContainer.style.transition = "";
+  btnContainer.style.transform = "scale(0,0)";
+  void btnContainer.offsetWidth;
+  btnContainer.style.transition = "transform 0.5s ease-out";
+  btnContainer.style.transform = "scale(1,1)";
+
   btnContainer.style.top = topPos + "px";
   btnContainer.style.left = leftPos + "px";
 });
