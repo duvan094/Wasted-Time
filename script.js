@@ -3,7 +3,7 @@ const decBtn = document.getElementById("decButton");
 
 const btnContainer = document.getElementById("btnContainer");
 
-const opacityIncValue = 0.00001;
+const opacityIncValue = 0.0001;
 
 const text = document.querySelectorAll("H1, H2,p");
 const background = document.querySelector("body");
@@ -244,8 +244,8 @@ function moving(clientX, clientY){
 
 function squeeze(clientX, clientY){
   if(gif.xPos <= 0){
-    let procent = Math.floor((clientX/gif.offsetWidth)*100)/100;
-    width = procent > 0.5 ? procent : 0.5;
+    let procent = Math.floor((clientX/(mousePosX))*100)/100;
+    width = procent > 0.5 && procent <= 1 ? procent : 0.5;
     height = 2 - width;
     gif.xPos = 0;
     gif.style.left = gif.xPos;
@@ -253,8 +253,8 @@ function squeeze(clientX, clientY){
     gif.style.transformOrigin = "0 0";
     gif.style.transition = "";
   }else if(gif.xPos + gif.offsetWidth >= window.innerWidth){
-    let procent = Math.floor((Math.abs(clientX-window.innerWidth)/gif.offsetWidth)*100)/100;
-    width = procent > 0.5 ? procent : 0.5;
+    let procent = Math.floor((Math.abs(clientX-window.innerWidth)/(gif.offsetWidth-mousePosX))*100)/100;
+    width = procent > 0.5 && procent <= 1 ? procent : 0.5;
     height = 2 - width;
     gif.style.transform = "scale(" + width + "," + height + ")";
     gif.style.transformOrigin = "100% 0";
@@ -264,8 +264,8 @@ function squeeze(clientX, clientY){
     gif.style.transition = "";
 
   }else if(gif.yPos <= 0){
-    let procent = Math.floor((clientY/gif.offsetHeight)*100)/100;
-    height = procent > 0.5 ? procent : 0.5;
+    let procent = Math.floor((clientY/mousePosY)*100)/100;
+    height = procent > 0.5 && procent <= 1 ? procent : 0.5;
     width = 2 - height;
     gif.yPos = 0;
     gif.style.top = gif.yPos;
@@ -273,8 +273,8 @@ function squeeze(clientX, clientY){
     gif.style.transformOrigin = "0 0";
     gif.style.transition = "";
   }else if(gif.yPos + gif.offsetHeight >= window.innerHeight){
-    let procent = Math.floor((Math.abs(clientY-window.innerHeight)/gif.offsetHeight)*100)/100;
-    height = procent > 0.5 ? procent : 0.5;
+    let procent = Math.floor((Math.abs(clientY-window.innerHeight)/(gif.offsetHeight-mousePosY))*100)/100;
+    height = procent > 0.5 && procent <= 1 ? procent : 0.5;
     width = 2 - height;
     gif.style.transform = "scale(" + width + "," + height + ")";
     gif.style.transformOrigin = "0 100%";

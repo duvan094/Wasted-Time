@@ -73,6 +73,7 @@ h1,h2,p,small{
 #number {
   font-weight: 600;
   font-size: 3em;
+  font-variant-numeric: tabular-nums;
 }
 
 button {
@@ -201,7 +202,6 @@ small.footer a {
   -webkit-user-drag: none;
   -webkit-user-select: none;
   -ms-user-select: none;
-  transition: 0.2s ease-in-out transform, 0.2s ease-in-out box-shadow;
 }
 
 #skew-wrapper {
