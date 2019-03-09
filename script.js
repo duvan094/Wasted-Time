@@ -3,7 +3,8 @@ const decBtn = document.getElementById("decButton");
 
 const btnContainer = document.getElementById("btnContainer");
 
-const opacityIncValue = 0.0001;
+0.00005
+const opacityIncValue = 0.00001;
 
 const text = document.querySelectorAll("H1, H2,p");
 const background = document.querySelector("body");
@@ -47,20 +48,22 @@ let time = 0;//seconds
 
 function incSeconds() {
   time += 1;
+  updateTimeString();
+}
 
+function decSeconds() {
+  time = time - 1 <= 0 ? 0 : time - 1;
+  updateTimeString();
+}
+
+function updateTimeString(){
   let minutes = Math.floor(time / 60);
   let seconds = time - minutes * 60;
 
   let timeString = minutes + ":" + (seconds < 10 ? "0" + seconds : seconds);
 
   nbr.innerHTML = timeString;
-  title.innerHTML = "Time Wasted: " + timeString;
-}
-
-function decSeconds() {
-  time -= 1;
-  nbr.innerHTML = time;
-  title.innerHTML = time < 2 ? time + " second wasted" : time + " seconds wasted";
+  title.innerHTML = timeString;
 }
 
 incBtn.addEventListener("click", incSeconds);
