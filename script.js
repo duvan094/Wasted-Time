@@ -51,8 +51,10 @@ function incSeconds() {
   let minutes = Math.floor(time / 60);
   let seconds = time - minutes * 60;
 
-  nbr.innerHTML = minutes + ":" + (seconds < 10 ? "0" + seconds : seconds);
-  title.innerHTML = time < 2 ? time + " second wasted" : time + " seconds wasted";
+  let timeString = minutes + ":" + (seconds < 10 ? "0" + seconds : seconds);
+
+  nbr.innerHTML = timeString;
+  title.innerHTML = "Time Wasted: " + timeString;
 }
 
 function decSeconds() {
