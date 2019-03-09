@@ -3,7 +3,7 @@ const decBtn = document.getElementById("decButton");
 
 const btnContainer = document.getElementById("btnContainer");
 
-const opacityIncValue = 0.001;
+const opacityIncValue = 0.00001;
 
 const text = document.querySelectorAll("H1, H2,p");
 const background = document.querySelector("body");

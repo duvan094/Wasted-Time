@@ -70,32 +70,31 @@ button {
   margin-bottom: 0.5em;
   color: #fff;
   font-size: 1.2em;
-  background: #0055ff;
+  background: #51aded;
   padding: 22px;
   border: white;
   transition: background 0.3s ease-in-out;
   font-weight: 700;
   transform: translateY(0px);
+  border-radius:5px;
+  border-bottom:#448ec1 5px solid;
 }
 
-button:active {
-  background: #0033cc;
-}
-
-button:hover {
-  background: #0044ee;
+button:active, button:hover {
+  border-bottom:0px;
+  background: #448ec1;
+  border-top:#37729a 5px solid;
 }
 
 button.red {
-  background: #ff0000;
+  background: #ed5153;
+  border-bottom:#bb4142 5px solid;
 }
 
-button.red:active {
-  background: #aa0000;
-}
-
-button.red:hover {
-  background: #cc0000;
+button.red:active, button.red:hover {
+  border-bottom:0px;
+  background: #bb4142;
+  border-top:#9c3738 5px solid;
 }
 
 small.footer {
