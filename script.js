@@ -43,19 +43,22 @@ btnContainer.addEventListener("mouseover", function(event) {
 
 const nbr = document.getElementById("number");
 const title = document.querySelector("title");
-let seconds = 0;
+let time = 0;//seconds
 
 function incSeconds() {
-  seconds += 1;
-  nbr.innerHTML = seconds;
-  title.innerHTML =
-    seconds < 2 ? seconds + " second wasted" : seconds + " seconds wasted";
+  time += 1;
+
+  let minutes = Math.floor(time / 60);
+  let seconds = time - minutes * 60;
+
+  nbr.innerHTML = minutes + ":" + (seconds < 10 ? "0" + seconds : seconds);
+  title.innerHTML = time < 2 ? time + " second wasted" : time + " seconds wasted";
 }
 
 function decSeconds() {
-  seconds -= 1;
-  nbr.innerHTML = seconds;
-  title.innerHTML = seconds + " seconds wasted";
+  time -= 1;
+  nbr.innerHTML = time;
+  title.innerHTML = time < 2 ? time + " second wasted" : time + " seconds wasted";
 }
 
 incBtn.addEventListener("click", incSeconds);
