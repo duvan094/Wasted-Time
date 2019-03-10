@@ -256,6 +256,17 @@ function squeeze(clientX, clientY){
     width = procent > 0.5 && procent <= 1 ? procent : 0.5;
     height = 2 - width;
     gif.xPos = 0;
+
+    if(gif.yPos <= 0){
+      gif.yPos = 0;
+      gif.style.top = 0 + "px";
+    }
+
+    if(gif.yPos + gif.offsetHeight * height >= window.innerHeight){
+      gif.yPos = window.innerHeight - gif.offsetHeight * height;
+      gif.style.top = gif.yPos + "px";
+    }
+
     gif.style.left = gif.xPos;
     gif.style.transform = "scale(" + width + "," + height + ")";
     gif.style.transformOrigin = "0 0";
@@ -268,13 +279,37 @@ function squeeze(clientX, clientY){
     gif.style.transformOrigin = "100% 0";
     gif.xPos = window.innerWidth - gif.offsetWidth;
 
+    if(gif.yPos <= 0){
+      gif.yPos = 0;
+      gif.style.top = 0 + "px";
+    }
+
+    if(gif.yPos + gif.offsetHeight * height >= window.innerHeight){
+      gif.yPos = window.innerHeight - gif.offsetHeight * height;
+      gif.style.top = gif.yPos + "px";
+    }
+
     gif.style.left = gif.xPos + "px";
+
     gif.style.transition = "";
 
   }else if(gif.yPos <= 0){
     let procent = Math.floor((clientY/mousePosY)*100)/100;
     height = procent > 0.5 && procent <= 1 ? procent : 0.5;
     width = 2 - height;
+
+    if(gif.xPos <= 0){
+      gif.xPos = 0;
+      gif.style.left = 0 + "px";
+    }
+
+    if(gif.xPos + gif.offsetWidth * width >= window.innerWidth){
+      gif.xPos = window.innerWidth - gif.offsetWidth * width;
+      gif.style.left = gif.xPos + "px";
+    }
+
+
+
     gif.yPos = 0;
     gif.style.top = gif.yPos;
     gif.style.transform = "scale(" + width + "," + height + ")";
@@ -287,6 +322,17 @@ function squeeze(clientX, clientY){
     gif.style.transform = "scale(" + width + "," + height + ")";
     gif.style.transformOrigin = "0 100%";
     gif.yPos = window.innerHeight - gif.offsetHeight;
+
+    if(gif.xPos <= 0){
+      gif.xPos = 0;
+      gif.style.left = 0 + "px";
+    }
+
+    if(gif.xPos + gif.offsetWidth * width >= window.innerWidth){
+      gif.xPos = window.innerWidth - gif.offsetWidth * width;
+      gif.style.left = gif.xPos + "px";
+    }
+
 
     gif.style.top = gif.yPos + "px";
     gif.style.transition = "";
