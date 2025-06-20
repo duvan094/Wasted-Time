@@ -202,6 +202,7 @@ small.footer a {
   -webkit-user-drag: none;
   -webkit-user-select: none;
   -ms-user-select: none;
+  cursor: grab;
 }
 
 #skew-wrapper {
@@ -219,6 +220,7 @@ small.footer a {
 #gif.dragging {
   transform: scale(0.9, 0.9);
   box-shadow: 0 5px 35px rgba(0, 0, 0, 0.5);
+  cursor: grabbing;
 }
 
 @keyframes bumpHorizontal {
