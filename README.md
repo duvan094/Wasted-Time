@@ -8,7 +8,7 @@ The idea expanded to add some gifs to make it more interesting. In the current s
 
 We will surely procrastinate even more so keep an eye out for even more features in the future.
 
-~Click [here](https://jacobduvander.se/prankdeluxe/) to see the project in action.~ 
+Click [here](https://wastedtime.jacobduvander.se/) to see the project in action.
 
 EDIT: The website is now down, we couldn't afford it without any donations anymore.
 
