@@ -3,7 +3,6 @@ const decBtn = document.getElementById("decButton");
 
 const btnContainer = document.getElementById("btnContainer");
 
-0.00005
 const opacityIncValue = 0.00001;
 
 const text = document.querySelectorAll("H1, H2,p");
@@ -44,7 +43,48 @@ btnContainer.addEventListener("mouseover", function(event) {
 
 const nbr = document.getElementById("number");
 const title = document.querySelector("title");
-let time = 0;//seconds
+const heading = document.querySelector("h1");
+
+const STORAGE_KEY = "wastedTime.seconds";
+const RAGE_AFTER_SECONDS = 10 * 60;
+
+const headlines = [
+  "Procrastination has gone too far! This is not a joke, this is a call for help!",
+  "Your thesis is waiting. It has been waiting for a very long time.",
+  "Congratulations, you opened this instead of writing. Again.",
+  "Just one more minute. Said the last 47 minutes.",
+  "Your supervisor would like a word. Several, actually.",
+  "This is fine. Everything is fine. Close the tab. (Don't.)"
+];
+
+const hiddenTitles = [
+  "Come back!",
+  "Get back to your thesis!",
+  "Still wasting time...",
+  "We see you in the other tab",
+  "Psst. Over here."
+];
+
+heading.textContent = headlines[Math.floor(Math.random() * headlines.length)];
+
+function loadTime() {
+  try {
+    const saved = parseInt(localStorage.getItem(STORAGE_KEY), 10);
+    return saved > 0 ? saved : 0;
+  } catch (e) {
+    return 0; // storage blocked, e.g. private mode
+  }
+}
+
+function saveTime() {
+  try {
+    localStorage.setItem(STORAGE_KEY, time);
+  } catch (e) {}
+}
+
+let time = loadTime(); //seconds
+let timeString = "0:00";
+let hiddenTitle = hiddenTitles[0];
 
 function incSeconds() {
   time += 1;
@@ -56,15 +96,29 @@ function decSeconds() {
   updateTimeString();
 }
 
+function renderTitle() {
+  title.textContent = document.hidden ? hiddenTitle + " " + timeString : timeString;
+}
+
 function updateTimeString(){
   let minutes = Math.floor(time / 60);
   let seconds = time - minutes * 60;
 
-  let timeString = minutes + ":" + (seconds < 10 ? "0" + seconds : seconds);
+  timeString = minutes + ":" + (seconds < 10 ? "0" + seconds : seconds);
 
-  nbr.innerHTML = timeString;
-  title.innerHTML = timeString;
+  nbr.textContent = timeString;
+  renderTitle();
+  saveTime();
 }
+
+document.addEventListener("visibilitychange", function() {
+  if (document.hidden) {
+    hiddenTitle = hiddenTitles[Math.floor(Math.random() * hiddenTitles.length)];
+  }
+  renderTitle();
+});
+
+updateTimeString();
 
 incBtn.addEventListener("click", incSeconds);
 decBtn.addEventListener("click", decSeconds);
@@ -85,14 +139,28 @@ const gifArr = [
   "nEXmNl3uha5YA"
 ];
 
-const gifLoadedArr = [];
+/*Gifs shown once you have wasted RAGE_AFTER_SECONDS*/
+const rageGifArr = [
+  "fLDsHzBdhe3BAj8Os8",
+  "37dKDRDAnPJny",
+  "yrJjsr6c22NyXPPhmL",
+  "GICASZKnHUo1gAF36U",
+  "RkMQkHC43tqwSdJeS4",
+  "DYhWQulNh8cHJ5lJNq",
+  "8MROOKOiQKyPe"
+];
 
 /*Pre loads in the gifs*/
-for (let i = 0; i < gifArr.length; i++) {
-  let newImg = new Image();
-  newImg.src = "https://i.giphy.com/media/" + gifArr[i] + "/giphy.webp";
-  gifLoadedArr.push(newImg);
+function preload(ids) {
+  return ids.map(function(id) {
+    let newImg = new Image();
+    newImg.src = "https://i.giphy.com/media/" + id + "/giphy.webp";
+    return newImg;
+  });
 }
+
+const gifLoadedArr = preload(gifArr);
+const rageLoadedArr = preload(rageGifArr);
 
 const gif = document.getElementById("gif");
 
@@ -179,8 +247,8 @@ let initialX, initialY;
 let mousePosX, mousePosY;
 
 gif.addEventListener("touchstart", function(event){
-  clientX = event.touches[0].clientX;
-  clientY = event.touches[0].clientY;
+  const clientX = event.touches[0].clientX;
+  const clientY = event.touches[0].clientY;
 
   moveInit(clientX, clientY);
 }, false);
@@ -192,8 +260,8 @@ gif.addEventListener("mousedown", function(event) {
 let lastTouchX, lastTouchY;
 
 gif.addEventListener("touchmove", function(event){
-  clientX = event.touches[0].clientX;
-  clientY = event.touches[0].clientY;
+  const clientX = event.touches[0].clientX;
+  const clientY = event.touches[0].clientY;
 
   lastTouchX = clientX;
   lastTouchY = clientY;
@@ -251,6 +319,7 @@ function moving(clientX, clientY){
 
 
 function squeeze(clientX, clientY){
+  let width, height;
   if(gif.xPos <= 0){
     let procent = Math.floor((clientX/(mousePosX))*100)/100;
     width = procent > 0.5 && procent <= 1 ? procent : 0.5;
@@ -404,11 +473,17 @@ function moveEnd(clientX, clientY){
 }
 
 function changeGif() {
-  let newGif = gifLoadedArr[Math.floor(Math.random() * gifLoadedArr.length)];
+  const pool = time >= RAGE_AFTER_SECONDS ? rageLoadedArr : gifLoadedArr;
 
-  while (newGif.src == gif.src) {
-    newGif = gifLoadedArr[Math.floor(Math.random() * gifLoadedArr.length)];
-  }
+  /*Skip gifs that failed to load (e.g. removed from giphy) and the current one*/
+  const candidates = pool.filter(function(img) {
+    return img.naturalWidth > 0 && img.src !== gif.src;
+  });
 
-  gif.src = newGif.src;
+  if (candidates.length === 0) return;
+
+  gif.src = candidates[Math.floor(Math.random() * candidates.length)].src;
 }
+
+/*If the current gif dies, swap to a working one*/
+gif.addEventListener("error", changeGif);
