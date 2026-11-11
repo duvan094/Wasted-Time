@@ -17,6 +17,7 @@ body {
   margin: 0;
   padding: 0;
   height: 100vh;
+  height: 100dvh;
   width: 100%;
   background: #aa0000;
   transition: background 1s ease-in-out, 1s opacity ease-out;
@@ -179,6 +180,7 @@ small.footer a {
   left: 50%;
   transform: translateX(-50%);
   width: 350px;
+  max-width: calc(100vw - 22px);
 }
 
 #message {
@@ -203,6 +205,7 @@ small.footer a {
   -webkit-user-select: none;
   -ms-user-select: none;
   cursor: grab;
+  touch-action: none; /*don't scroll the page while dragging on touch screens*/
 }
 
 #skew-wrapper {
@@ -275,7 +278,7 @@ small.footer a {
 @media(max-width:520px){
 
   body{
-
+    margin-top: 8px;
   }
 
   main{
@@ -285,26 +288,54 @@ small.footer a {
   }
 
   h1{
-    font-size:1.5em;
-    padding:1em;
+    font-size:1.15em;
+    padding:0.5em;
+    margin: 0.3em 0;
+  }
+
+  h2{
+    font-size: 1.1em;
+    margin: 0.3em 0;
   }
 
   #number {
     font-weight: 600;
     font-size: 2em;
+    margin: 0.2em 0;
   }
 
   button{
     width:100%;
+    font-size: 1em;
+    padding: 16px;
   }
 
   #gif {
-    max-width: 200px;
-    max-height: 200px;
+    max-width: 140px;
+    max-height: 140px;
   }
 
   small.footer {
     text-align: right;
+    padding: 10px;
+    font-size: 0.7em;
   }
 
+}
+
+/*Short screens, e.g. phones in landscape*/
+@media(max-height:480px){
+  h1{
+    font-size: 1em;
+    margin: 0.2em 0;
+  }
+
+  #number {
+    font-size: 1.6em;
+    margin: 0;
+  }
+
+  button{
+    padding: 10px;
+  }
 }

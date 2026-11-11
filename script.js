@@ -3,7 +3,6 @@ const decBtn = document.getElementById("decButton");
 
 const btnContainer = document.getElementById("btnContainer");
 
-0.00005
 const opacityIncValue = 0.00001;
 
 const text = document.querySelectorAll("H1, H2,p");
@@ -24,10 +23,10 @@ setInterval(changeTitleColor, 2000);
 
 btnContainer.addEventListener("mouseover", function(event) {
   let topPos = Math.floor(
-    Math.random() * (window.innerHeight - btnContainer.offsetHeight)
+    Math.random() * Math.max(0, window.innerHeight - btnContainer.offsetHeight)
   );
   let leftPos = Math.floor(
-    Math.random() * (window.innerWidth - btnContainer.offsetWidth)
+    Math.random() * Math.max(0, window.innerWidth - btnContainer.offsetWidth)
   );
 
   btnContainer.style.transform = "translateX(0)";
@@ -44,7 +43,48 @@ btnContainer.addEventListener("mouseover", function(event) {
 
 const nbr = document.getElementById("number");
 const title = document.querySelector("title");
-let time = 0;//seconds
+const heading = document.querySelector("h1");
+
+const STORAGE_KEY = "wastedTime.seconds";
+const RAGE_AFTER_SECONDS = 10 * 60;
+
+const headlines = [
+  "Procrastination has gone too far! This is not a joke, this is a call for help!",
+  "Your thesis is waiting. It has been waiting for a very long time.",
+  "Congratulations, you opened this instead of writing. Again.",
+  "Just one more minute. Said the last 47 minutes.",
+  "Your supervisor would like a word. Several, actually.",
+  "This is fine. Everything is fine. Close the tab. (Don't.)"
+];
+
+const hiddenTitles = [
+  "Come back!",
+  "Get back to your thesis!",
+  "Still wasting time...",
+  "We see you in the other tab",
+  "Psst. Over here."
+];
+
+heading.textContent = headlines[Math.floor(Math.random() * headlines.length)];
+
+function loadTime() {
+  try {
+    const saved = parseInt(localStorage.getItem(STORAGE_KEY), 10);
+    return saved > 0 ? saved : 0;
+  } catch (e) {
+    return 0; // storage blocked, e.g. private mode
+  }
+}
+
+function saveTime() {
+  try {
+    localStorage.setItem(STORAGE_KEY, time);
+  } catch (e) {}
+}
+
+let time = loadTime(); //seconds
+let timeString = "0:00";
+let hiddenTitle = hiddenTitles[0];
 
 function incSeconds() {
   time += 1;
@@ -56,15 +96,29 @@ function decSeconds() {
   updateTimeString();
 }
 
+function renderTitle() {
+  title.textContent = document.hidden ? hiddenTitle + " " + timeString : timeString;
+}
+
 function updateTimeString(){
   let minutes = Math.floor(time / 60);
   let seconds = time - minutes * 60;
 
-  let timeString = minutes + ":" + (seconds < 10 ? "0" + seconds : seconds);
+  timeString = minutes + ":" + (seconds < 10 ? "0" + seconds : seconds);
 
-  nbr.innerHTML = timeString;
-  title.innerHTML = timeString;
+  nbr.textContent = timeString;
+  renderTitle();
+  saveTime();
 }
+
+document.addEventListener("visibilitychange", function() {
+  if (document.hidden) {
+    hiddenTitle = hiddenTitles[Math.floor(Math.random() * hiddenTitles.length)];
+  }
+  renderTitle();
+});
+
+updateTimeString();
 
 incBtn.addEventListener("click", incSeconds);
 decBtn.addEventListener("click", decSeconds);
@@ -85,16 +139,33 @@ const gifArr = [
   "nEXmNl3uha5YA"
 ];
 
-const gifLoadedArr = [];
+/*Gifs shown once you have wasted RAGE_AFTER_SECONDS*/
+const rageGifArr = [
+  "fLDsHzBdhe3BAj8Os8",
+  "37dKDRDAnPJny",
+  "yrJjsr6c22NyXPPhmL",
+  "GICASZKnHUo1gAF36U",
+  "RkMQkHC43tqwSdJeS4",
+  "DYhWQulNh8cHJ5lJNq",
+  "8MROOKOiQKyPe"
+];
 
 /*Pre loads in the gifs*/
-for (let i = 0; i < gifArr.length; i++) {
-  let newImg = new Image();
-  newImg.src = "https://i.giphy.com/media/" + gifArr[i] + "/giphy.webp";
-  gifLoadedArr.push(newImg);
+function preload(ids) {
+  return ids.map(function(id) {
+    let newImg = new Image();
+    newImg.src = "https://i.giphy.com/media/" + id + "/giphy.webp";
+    return newImg;
+  });
 }
 
+const gifLoadedArr = preload(gifArr);
+const rageLoadedArr = preload(rageGifArr);
+
 const gif = document.getElementById("gif");
+
+const CRUISE_SPEED = 3; //normal px per frame
+const FRICTION = 0.985; //how fast a thrown gif slows back to cruise speed
 
 gif.speed = 2;
 gif.xPos = gif.getBoundingClientRect().left;
@@ -108,6 +179,14 @@ let opacity = 0;
 
 function gifMove() {
   if (!gif.moving) {
+    /*A thrown gif slows down until it is back to cruise speed*/
+    let speed = Math.hypot(gif.xDir, gif.yDir);
+    if (speed > CRUISE_SPEED) {
+      let factor = Math.max(CRUISE_SPEED / speed, FRICTION);
+      gif.xDir *= factor;
+      gif.yDir *= factor;
+    }
+
     gif.xPos += gif.xDir;
     gif.yPos += gif.yDir;
 
@@ -178,51 +257,70 @@ let oldX, oldY;
 let initialX, initialY;
 let mousePosX, mousePosY;
 
-gif.addEventListener("touchstart", function(event){
-  clientX = event.touches[0].clientX;
-  clientY = event.touches[0].clientY;
-
-  moveInit(clientX, clientY);
-}, false);
-
-gif.addEventListener("mousedown", function(event) {
+/*Pointer Events cover mouse, touch and pen. Capturing the pointer keeps
+  the drag alive even when it leaves the gif or the window.*/
+gif.addEventListener("pointerdown", function(event) {
+  if (event.button !== undefined && event.button !== 0) return;
+  gif.setPointerCapture(event.pointerId);
   moveInit(event.clientX, event.clientY);
 });
 
-let lastTouchX, lastTouchY;
-
-gif.addEventListener("touchmove", function(event){
-  clientX = event.touches[0].clientX;
-  clientY = event.touches[0].clientY;
-
-  lastTouchX = clientX;
-  lastTouchY = clientY;
-
-  moving(clientX, clientY);
-}, false);
-
-window.addEventListener("mousemove", function(event) {
+gif.addEventListener("pointermove", function(event) {
   moving(event.clientX, event.clientY);
 });
 
-gif.addEventListener("touchcancel", function(event){
-
-}, false);
-
-gif.addEventListener("touchend", function(event){
-  moveEnd(lastTouchX, lastTouchY);
-}, false);
-
-window.addEventListener("mouseup", function(event) {
+gif.addEventListener("pointerup", function(event) {
   moveEnd(event.clientX, event.clientY);
 });
 
+gif.addEventListener("pointercancel", function(event) {
+  moveEnd(event.clientX, event.clientY);
+});
+
+/*Keep the gif inside the window when it is resized*/
+window.addEventListener("resize", function() {
+  gif.xPos = Math.max(0, Math.min(gif.xPos, window.innerWidth - gif.offsetWidth));
+  gif.yPos = Math.max(0, Math.min(gif.yPos, window.innerHeight - gif.offsetHeight));
+  gif.style.left = gif.xPos + "px";
+  gif.style.top = gif.yPos + "px";
+});
+
+/*Throw physics: speed comes from how fast the pointer moved just before release*/
+const THROW_WINDOW_MS = 100;
+const MAX_THROW_SPEED = 30; //px per frame
+const FRAME_MS = 1000 / 60;
+let samples = [];
+
+function recordSample(x, y) {
+  const now = performance.now();
+  samples.push({ x: x, y: y, t: now });
+  while (samples.length > 1 && now - samples[0].t > THROW_WINDOW_MS) {
+    samples.shift();
+  }
+}
+
+/*Pointer velocity in px per frame, zero if it stopped before release*/
+function throwVelocity() {
+  if (samples.length < 2) return { x: 0, y: 0 };
+  const first = samples[0];
+  const last = samples[samples.length - 1];
+  const dt = last.t - first.t;
+  if (dt < 8 || performance.now() - last.t > THROW_WINDOW_MS) {
+    return { x: 0, y: 0 };
+  }
+  return {
+    x: (last.x - first.x) / dt * FRAME_MS,
+    y: (last.y - first.y) / dt * FRAME_MS
+  };
+}
 
 function moveInit(clientX, clientY){
   gif.moving = true;
   gif.className = "dragging";
   oldX = initialX = clientX;
   oldY = initialY = clientY;
+  samples = [];
+  recordSample(clientX, clientY);
 
   mousePosX = oldX - gif.getBoundingClientRect().left; //x position within the element.
   mousePosY = oldY - gif.getBoundingClientRect().top; //y position within the element.
@@ -243,6 +341,7 @@ function moving(clientX, clientY){
 
     oldX = newX;
     oldY = newY;
+    recordSample(clientX, clientY);
 
     squeeze(clientX, clientY);
 
@@ -251,6 +350,7 @@ function moving(clientX, clientY){
 
 
 function squeeze(clientX, clientY){
+  let width, height;
   if(gif.xPos <= 0){
     let procent = Math.floor((clientX/(mousePosX))*100)/100;
     width = procent > 0.5 && procent <= 1 ? procent : 0.5;
@@ -353,35 +453,23 @@ function moveEnd(clientX, clientY){
       gif.xPos = oldX - mousePosX;
       gif.yPos = oldY - mousePosY;
 
-      let xDiff = clientX - initialX;
-      let yDiff = clientY - initialY;
+      let v = throwVelocity();
+      let speed = Math.hypot(v.x, v.y);
 
-      let directionX, directionY;
-
-      /*See if which direction the gif is going*/
-      if (xDiff < 0) {
-        directionX = -1;
-      } else {
-        directionX = 1;
+      if (speed > MAX_THROW_SPEED) {
+        v.x = v.x / speed * MAX_THROW_SPEED;
+        v.y = v.y / speed * MAX_THROW_SPEED;
+      } else if (speed < CRUISE_SPEED) {
+        /*Barely moved: cruise at normal speed, keeping the old heading if the pointer was still*/
+        let dx = speed < 0.01 ? gif.xDir : v.x;
+        let dy = speed < 0.01 ? gif.yDir : v.y;
+        let len = Math.hypot(dx, dy) || 1;
+        v.x = dx / len * CRUISE_SPEED;
+        v.y = dy / len * CRUISE_SPEED;
       }
 
-      if (yDiff < 0) {
-        directionY = -1;
-      } else {
-        directionY = 1;
-      }
-
-      /*Calculate the speed each direction should go*/
-      if (Math.abs(xDiff) < Math.abs(yDiff)) {
-        let procent = Math.abs(xDiff) / Math.abs(yDiff);
-
-        gif.xDir = directionX * (2 * gif.speed * procent);
-        gif.yDir = directionY * (2 * gif.speed * (1 - procent));
-      } else {
-        let procent = Math.abs(yDiff) / Math.abs(xDiff);
-        gif.xDir = directionX * (2 * gif.speed * (1 - procent));
-        gif.yDir = directionY * (2 * gif.speed * procent);
-      }
+      gif.xDir = v.x;
+      gif.yDir = v.y;
 
       /*Check if the gif is outside the bounds of the window*/
       if (gif.xPos + gif.offsetWidth > window.innerWidth) {
@@ -404,11 +492,17 @@ function moveEnd(clientX, clientY){
 }
 
 function changeGif() {
-  let newGif = gifLoadedArr[Math.floor(Math.random() * gifLoadedArr.length)];
+  const pool = time >= RAGE_AFTER_SECONDS ? rageLoadedArr : gifLoadedArr;
 
-  while (newGif.src == gif.src) {
-    newGif = gifLoadedArr[Math.floor(Math.random() * gifLoadedArr.length)];
-  }
+  /*Skip gifs that failed to load (e.g. removed from giphy) and the current one*/
+  const candidates = pool.filter(function(img) {
+    return img.naturalWidth > 0 && img.src !== gif.src;
+  });
 
-  gif.src = newGif.src;
+  if (candidates.length === 0) return;
+
+  gif.src = candidates[Math.floor(Math.random() * candidates.length)].src;
 }
+
+/*If the current gif dies, swap to a working one*/
+gif.addEventListener("error", changeGif);
