@@ -21,7 +21,7 @@ function changeTitleColor() {
 
 setInterval(changeTitleColor, 2000);
 
-btnContainer.addEventListener("mouseover", function(event) {
+function dodgeButtons() {
   let topPos = Math.floor(
     Math.random() * Math.max(0, window.innerHeight - btnContainer.offsetHeight)
   );
@@ -39,7 +39,9 @@ btnContainer.addEventListener("mouseover", function(event) {
 
   btnContainer.style.top = topPos + "px";
   btnContainer.style.left = leftPos + "px";
-});
+}
+
+btnContainer.addEventListener("mouseover", dodgeButtons);
 
 const nbr = document.getElementById("number");
 const title = document.querySelector("title");
@@ -180,11 +182,15 @@ let opacity = 0;
 function gifMove() {
   if (!gif.moving) {
     /*A thrown gif slows down until it is back to cruise speed*/
-    let speed = Math.hypot(gif.xDir, gif.yDir);
-    if (speed > CRUISE_SPEED) {
-      let factor = Math.max(CRUISE_SPEED / speed, FRICTION);
-      gif.xDir *= factor;
-      gif.yDir *= factor;
+    if (gravityOn) {
+      applyGravity();
+    } else {
+      let speed = Math.hypot(gif.xDir, gif.yDir);
+      if (speed > CRUISE_SPEED) {
+        let factor = Math.max(CRUISE_SPEED / speed, FRICTION);
+        gif.xDir *= factor;
+        gif.yDir *= factor;
+      }
     }
 
     gif.xPos += gif.xDir;
@@ -195,7 +201,10 @@ function gifMove() {
       gif.xPos < 0 ||
       (gif.yPos > window.innerHeight - gif.offsetHeight || gif.yPos < 0)
     ) {
-      changeGif();
+      /*Small gravity hops shouldn't swap the gif every time*/
+      if (!gravityOn || Math.abs(gif.xDir) > 4 || Math.abs(gif.yDir) > 4) {
+        changeGif();
+      }
       if (gif.xPos + gif.offsetWidth > window.innerWidth || gif.xPos < 0) {
         if (gif.xPos + gif.offsetWidth > window.innerWidth) {
           gif.xPos = window.innerWidth - gif.offsetWidth;
@@ -203,7 +212,7 @@ function gifMove() {
           gif.xPos = 0;
         }
 
-        gif.xDir = -1 * gif.xDir;
+        gif.xDir = -1 * gif.xDir * (gravityOn ? WALL_BOUNCE : 1);
         bumbAnimation("horizontal");
       } else {
         if (gif.yPos + gif.offsetHeight > window.innerHeight) {
@@ -212,7 +221,14 @@ function gifMove() {
           gif.yPos = 0;
         }
 
-        gif.yDir = -1 * gif.yDir;
+        gif.yDir = -1 * gif.yDir * (gravityOn ? FLOOR_BOUNCE : 1);
+        if (
+          gravityOn &&
+          Math.abs(gif.yDir) < 1.2 &&
+          gif.yPos >= window.innerHeight - gif.offsetHeight - 0.5
+        ) {
+          gif.yDir = 0; //come to rest on the floor
+        }
         bumbAnimation("vertical");
       }
     }
@@ -220,6 +236,8 @@ function gifMove() {
     gif.style.left = gif.xPos + "px";
     gif.style.top = gif.yPos + "px";
 
+
+    checkGifInteractions();
 
     if (opacity < 0.8) {
       opacity += opacityIncValue;
@@ -240,6 +258,7 @@ window.addEventListener("load", function() {
 });
 
 function bumbAnimation(direction) {
+  blip();
   if (direction == "horizontal") {
     gif.classList.remove("bumpVertical");
     gif.classList.remove("bumpHorizontal");
@@ -663,6 +682,17 @@ function spawnGhost() {
   };
 
   function ghostMove() {
+    const ghostSpeed = Math.hypot(ghost.xDir, ghost.yDir);
+    if (ghostSpeed > CRUISE_SPEED) {
+      const f = Math.max(CRUISE_SPEED / ghostSpeed, FRICTION);
+      ghost.xDir *= f;
+      ghost.yDir *= f;
+    } else if (ghostSpeed < 1) {
+      const angle = Math.random() * Math.PI * 2; //don't let the ghost get stuck
+      ghost.xDir = Math.cos(angle) * CRUISE_SPEED * 0.8;
+      ghost.yDir = Math.sin(angle) * CRUISE_SPEED * 0.8;
+    }
+
     ghost.xPos += ghost.xDir;
     ghost.yPos += ghost.yDir;
 
@@ -750,3 +780,211 @@ setInterval(function() {
     shoutSomething();
   }
 }, 1000);
+
+
+/* ---------- Gravity ---------- */
+
+const GRAVITY = 0.25; //px per frame, per frame
+const FLOOR_BOUNCE = 0.8;
+const WALL_BOUNCE = 0.9;
+let gravityOn = false;
+
+function applyGravity() {
+  const floor = window.innerHeight - gif.offsetHeight;
+  const resting = gif.yPos >= floor - 0.5 && Math.abs(gif.yDir) < 0.01;
+
+  if (resting) {
+    gif.yPos = floor;
+    gif.xDir *= 0.98; //floor friction
+    if (Math.abs(gif.xDir) < 0.05) gif.xDir = 0;
+  } else {
+    gif.yDir += GRAVITY;
+  }
+  gif.xDir *= 0.9995; //air drag
+}
+
+function setGravity(on) {
+  gravityOn = on;
+  gravityBtn.setAttribute("aria-pressed", on);
+  gravityBtn.classList.toggle("active", on);
+  if (!on && Math.hypot(gif.xDir, gif.yDir) < 0.5) {
+    const angle = Math.random() * Math.PI * 2; //kick it back into motion
+    gif.xDir = Math.cos(angle) * CRUISE_SPEED;
+    gif.yDir = Math.sin(angle) * CRUISE_SPEED;
+  }
+  announce(on ? "Gravity: on" : "Gravity: off");
+}
+
+/* ---------- Gif interactions ---------- */
+
+const SCATTER_MIN_SPEED = 4;
+let lastScatter = 0;
+let lastCollision = 0;
+
+function checkGifInteractions() {
+  const now = performance.now();
+  const w = gif.offsetWidth;
+  const h = gif.offsetHeight;
+
+  /*Throw the gif at the buttons and they scatter*/
+  if (Math.hypot(gif.xDir, gif.yDir) > SCATTER_MIN_SPEED && now - lastScatter > 800) {
+    const r = btnContainer.getBoundingClientRect();
+    if (gif.xPos < r.right && gif.xPos + w > r.left && gif.yPos < r.bottom && gif.yPos + h > r.top) {
+      lastScatter = now;
+      dodgeButtons();
+      blip();
+    }
+  }
+
+  /*Gif vs ghost: swap momentum and push them apart*/
+  if (ghost && now - lastCollision > 300) {
+    const gw = ghost.el.offsetWidth;
+    const gh = ghost.el.offsetHeight;
+    const ox = Math.min(gif.xPos + w, ghost.xPos + gw) - Math.max(gif.xPos, ghost.xPos);
+    const oy = Math.min(gif.yPos + h, ghost.yPos + gh) - Math.max(gif.yPos, ghost.yPos);
+
+    if (ox > 0 && oy > 0) {
+      lastCollision = now;
+      const tx = gif.xDir;
+      const ty = gif.yDir;
+      gif.xDir = ghost.xDir;
+      gif.yDir = ghost.yDir;
+      ghost.xDir = tx;
+      ghost.yDir = ty;
+
+      if (ox < oy) {
+        const dir = gif.xPos < ghost.xPos ? -1 : 1;
+        gif.xPos += dir * ox / 2;
+        ghost.xPos -= dir * ox / 2;
+      } else {
+        const dir = gif.yPos < ghost.yPos ? -1 : 1;
+        gif.yPos += dir * oy / 2;
+        ghost.yPos -= dir * oy / 2;
+      }
+      blip();
+    }
+  }
+}
+
+/* ---------- Sound ---------- */
+
+/*Everything is synthesised with the Web Audio API, no audio files.
+  A low drone gets higher, faster and louder the longer you waste time.*/
+let audio = null;
+let soundOn = false;
+
+function intensity() {
+  return Math.min(1, time / (20 * 60));
+}
+
+function createAudio() {
+  const AudioCtx = window.AudioContext || window.webkitAudioContext;
+  if (!AudioCtx) return null;
+
+  const ctx = new AudioCtx();
+  const master = ctx.createGain();
+  master.gain.value = 0;
+  master.connect(ctx.destination);
+
+  const filter = ctx.createBiquadFilter();
+  filter.type = "lowpass";
+  filter.frequency.value = 500;
+  filter.connect(master);
+
+  const tremolo = ctx.createGain();
+  tremolo.gain.value = 0.7;
+  tremolo.connect(filter);
+
+  const lfo = ctx.createOscillator();
+  lfo.frequency.value = 3;
+  const lfoDepth = ctx.createGain();
+  lfoDepth.gain.value = 0.3;
+  lfo.connect(lfoDepth);
+  lfoDepth.connect(tremolo.gain);
+  lfo.start();
+
+  const oscs = [0, 7].map(function(detune) {
+    const osc = ctx.createOscillator();
+    osc.type = "sawtooth";
+    osc.detune.value = detune;
+    osc.frequency.value = 55;
+    osc.connect(tremolo);
+    osc.start();
+    return osc;
+  });
+
+  return { ctx: ctx, master: master, oscs: oscs, lfo: lfo, filter: filter };
+}
+
+function updateSound() {
+  if (!audio) return;
+  const t = audio.ctx.currentTime;
+  const level = intensity();
+  audio.oscs.forEach(function(osc) {
+    osc.frequency.setTargetAtTime(55 + level * 55, t, 0.5);
+  });
+  audio.lfo.frequency.setTargetAtTime(2 + level * 6, t, 0.5);
+  audio.filter.frequency.setTargetAtTime(400 + level * 1200, t, 0.5);
+  audio.master.gain.setTargetAtTime(soundOn ? 0.03 + level * 0.1 : 0, t, 0.1);
+}
+
+function setSound(on) {
+  if (on && !audio) audio = createAudio();
+  if (on && !audio) return; //not supported
+  soundOn = on;
+  if (audio && on) audio.ctx.resume();
+  soundBtn.textContent = on ? "🔊" : "🔇";
+  soundBtn.setAttribute("aria-pressed", on);
+  updateSound();
+}
+
+/*Short thud when the gif hits something*/
+function blip() {
+  if (!audio || !soundOn) return;
+  const t = audio.ctx.currentTime;
+  const osc = audio.ctx.createOscillator();
+  const gain = audio.ctx.createGain();
+  osc.frequency.setValueAtTime(220, t);
+  osc.frequency.exponentialRampToValueAtTime(70, t + 0.1);
+  gain.gain.setValueAtTime(0.15, t);
+  gain.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+  osc.connect(gain);
+  gain.connect(audio.ctx.destination);
+  osc.start(t);
+  osc.stop(t + 0.13);
+}
+
+setInterval(updateSound, 1000);
+
+/* ---------- Controls ---------- */
+
+const controls = document.createElement("div");
+controls.id = "controls";
+
+const soundBtn = document.createElement("button");
+soundBtn.textContent = "🔇";
+soundBtn.title = "Sound (off by default)";
+soundBtn.setAttribute("aria-label", "Toggle sound");
+soundBtn.setAttribute("aria-pressed", "false");
+soundBtn.addEventListener("click", function() {
+  setSound(!soundOn);
+});
+
+const gravityBtn = document.createElement("button");
+gravityBtn.textContent = "⬇️";
+gravityBtn.title = "Gravity (G)";
+gravityBtn.setAttribute("aria-label", "Toggle gravity");
+gravityBtn.setAttribute("aria-pressed", "false");
+gravityBtn.addEventListener("click", function() {
+  setGravity(!gravityOn);
+});
+
+window.addEventListener("keydown", function(event) {
+  if ((event.key === "g" || event.key === "G") && !popupOpen && !event.metaKey && !event.ctrlKey) {
+    setGravity(!gravityOn);
+  }
+});
+
+controls.appendChild(soundBtn);
+controls.appendChild(gravityBtn);
+document.body.appendChild(controls);
