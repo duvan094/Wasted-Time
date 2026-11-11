@@ -19,7 +19,6 @@ Click [here](https://wastedtime.jacobduvander.se/) to see the project in action.
 - "Decrease your wasted time" asks if you really want to work, sometimes several times. Say no and it costs you time.
 - Go idle for 30 seconds and the page shouts at you.
 - Gravity mode (button or `G`), plus an optional sound drone that gets angrier over time.
-- A thesis progress bar that starts at 3% and goes backwards while you procrastinate.
 - "Share my shame" copies your wasted time to the clipboard.
 
 Animations respect `prefers-reduced-motion`. Sound is off by default.

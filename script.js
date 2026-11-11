@@ -633,9 +633,6 @@ function showWorkPopup(round) {
 }
 
 function confirmWork() {
-  workDone += 1;
-  saveWorkDone();
-  updateProgress();
   decSeconds(WORK_REWARD_SECONDS);
   announce("You worked. -" + WORK_REWARD_SECONDS + "s. Who are you?");
 }
@@ -993,65 +990,11 @@ controls.appendChild(gravityBtn);
 document.body.appendChild(controls);
 
 
-/* ---------- Thesis progress ---------- */
-
-/*Starts at 3%. Only actually working moves it forward,
-  and every five minutes wasted pushes it back.*/
-const WORK_KEY = "wastedTime.workDone";
-const START_PROGRESS = 3;
-const PROGRESS_PER_WORK = 0.5;
-const REGRESS_PER_5_MIN = 0.2;
-
-function loadWorkDone() {
-  try {
-    const saved = parseInt(localStorage.getItem(WORK_KEY), 10);
-    return saved > 0 ? saved : 0;
-  } catch (e) {
-    return 0;
-  }
-}
-
-function saveWorkDone() {
-  try {
-    localStorage.setItem(WORK_KEY, workDone);
-  } catch (e) {}
-}
-
-let workDone = loadWorkDone();
-
-const progress = document.getElementById("progress");
-const progressBar = document.getElementById("progress-bar");
-const progressLabel = document.getElementById("progress-label");
-
-function thesisProgress() {
-  const value =
-    START_PROGRESS + workDone * PROGRESS_PER_WORK - Math.floor(time / 300) * REGRESS_PER_5_MIN;
-  return Math.max(0, Math.min(100, value));
-}
-
-function progressComment(value) {
-  if (value <= 0) return "Thesis? What thesis?";
-  if (value < START_PROGRESS) return "Going backwards. Impressive.";
-  if (value === START_PROGRESS) return "Stuck. Classic.";
-  return "Progress?! Suspicious.";
-}
-
-function updateProgress() {
-  const value = thesisProgress();
-  progressBar.style.width = value + "%";
-  progress.setAttribute("aria-valuenow", value.toFixed(1));
-  progressLabel.textContent = "Thesis progress: " + value.toFixed(1) + "% - " + progressComment(value);
-}
-
-updateProgress();
-setInterval(updateProgress, 1000);
-
 /* ---------- Share your shame ---------- */
 
 function shareText() {
   return (
-    "I wasted " + timeString + " on Wasted Time instead of writing my thesis. " +
-    "It is " + thesisProgress().toFixed(1) + "% done. " +
+    "I wasted " + timeString + " on Wasted Time. Beat that: " +
     location.href.split("#")[0]
   );
 }
