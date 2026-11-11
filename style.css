@@ -480,3 +480,34 @@ small.footer a {
 #controls button[aria-pressed="true"] {
   border-color: #fff;
 }
+
+/* ---------- Thesis progress ---------- */
+
+#progress {
+  width: 100%;
+  max-width: 320px;
+  height: 14px;
+  margin: 0 auto 6px;
+  background: rgba(0, 0, 0, 0.35);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+#progress-bar {
+  height: 100%;
+  width: 3%;
+  background: #fff;
+  border-radius: 999px;
+  transition: width 0.6s ease-out;
+}
+
+#progress-label {
+  display: block;
+}
+
+@media(max-width:520px){
+  #controls button {
+    font-size: 1em;
+    padding: 6px 10px;
+  }
+}
