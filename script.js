@@ -91,8 +91,8 @@ function incSeconds() {
   updateTimeString();
 }
 
-function decSeconds() {
-  time = time - 1 <= 0 ? 0 : time - 1;
+function decSeconds(amount) {
+  time = Math.max(0, time - (amount || 1));
   updateTimeString();
 }
 
@@ -121,7 +121,7 @@ document.addEventListener("visibilitychange", function() {
 updateTimeString();
 
 incBtn.addEventListener("click", incSeconds);
-decBtn.addEventListener("click", decSeconds);
+decBtn.addEventListener("click", askToWork);
 
 /*Increase time every second*/
 setInterval(function() {
@@ -506,3 +506,247 @@ function changeGif() {
 
 /*If the current gif dies, swap to a working one*/
 gif.addEventListener("error", changeGif);
+
+
+/* ---------- Toast ---------- */
+
+const toast = document.createElement("div");
+toast.id = "toast";
+document.body.appendChild(toast);
+let toastTimer;
+
+function announce(message) {
+  toast.textContent = message;
+  toast.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function() {
+    toast.classList.remove("show");
+  }, 3500);
+}
+
+const reducedMotion =
+  window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/* ---------- "Are you sure you want to work?" ---------- */
+
+const WORK_REWARD_SECONDS = 30;
+const WORK_PENALTY_SECONDS = 30;
+const MAX_POPUP_ROUNDS = 3;
+
+const popupQuestions = [
+  "Are you sure you want to work?",
+  "Work? Voluntarily? Now?",
+  "This will reduce your wasted time. Think of the consequences.",
+  "Your sofa will miss you. Continue?",
+  "Really, really sure?"
+];
+
+let popupOpen = false;
+
+function askToWork() {
+  if (popupOpen) return;
+  popupOpen = true;
+  showWorkPopup(1);
+}
+
+function showWorkPopup(round) {
+  const backdrop = document.createElement("div");
+  backdrop.className = "popup-backdrop";
+
+  const box = document.createElement("div");
+  box.className = "popup";
+  box.setAttribute("role", "dialog");
+  box.setAttribute("aria-modal", "true");
+
+  const question = document.createElement("div");
+  question.className = "popup-text";
+  question.textContent = popupQuestions[Math.floor(Math.random() * popupQuestions.length)];
+
+  const yes = document.createElement("button");
+  yes.textContent = "Yes, I want to work";
+  const no = document.createElement("button");
+  no.textContent = "No, keep procrastinating";
+  no.className = "red";
+
+  function close() {
+    document.removeEventListener("keydown", onKey);
+    backdrop.remove();
+  }
+
+  function onYes() {
+    close();
+    if (round < MAX_POPUP_ROUNDS && Math.random() < 0.5) {
+      showWorkPopup(round + 1); //are you REALLY sure?
+    } else {
+      popupOpen = false;
+      confirmWork();
+    }
+  }
+
+  function onNo() {
+    close();
+    popupOpen = false;
+    time += WORK_PENALTY_SECONDS;
+    updateTimeString();
+    announce("Wise choice. +" + WORK_PENALTY_SECONDS + "s of procrastination.");
+  }
+
+  function onKey(event) {
+    if (event.key === "Escape") onNo();
+  }
+
+  yes.addEventListener("click", onYes);
+  no.addEventListener("click", onNo);
+  document.addEventListener("keydown", onKey);
+
+  box.appendChild(question);
+  /*Randomise the button order so you can't click on autopilot*/
+  if (Math.random() < 0.5) {
+    box.appendChild(yes);
+    box.appendChild(no);
+  } else {
+    box.appendChild(no);
+    box.appendChild(yes);
+  }
+  backdrop.appendChild(box);
+  document.body.appendChild(backdrop);
+  (Math.random() < 0.5 ? no : yes).focus({ preventScroll: true });
+}
+
+function confirmWork() {
+  decSeconds(WORK_REWARD_SECONDS);
+  announce("You worked. -" + WORK_REWARD_SECONDS + "s. Who are you?");
+}
+
+/* ---------- Escalating chaos ---------- */
+
+let ghost = null; //second, undraggable gif
+
+function addDecoys() {
+  const labels = ["Decrease your wasted time", "Stop procrastinating", "Work now (really)"];
+  labels.forEach(function(label) {
+    const decoy = document.createElement("button");
+    decoy.textContent = label;
+    decoy.className = "red";
+    decoy.tabIndex = -1;
+    decoy.addEventListener("click", function() {
+      time += 10;
+      updateTimeString();
+      announce("Decoy! +10s");
+    });
+    /*Shuffle in among the real buttons*/
+    btnContainer.insertBefore(
+      decoy,
+      btnContainer.children[Math.floor(Math.random() * btnContainer.children.length)]
+    );
+  });
+}
+
+function startSpin() {
+  if (reducedMotion) return;
+  heading.classList.add("spin");
+  nbr.classList.add("spin");
+}
+
+function spawnGhost() {
+  const img = document.createElement("img");
+  img.className = "ghost";
+  img.src = gif.src;
+  document.getElementById("skew-wrapper").appendChild(img);
+
+  ghost = {
+    el: img,
+    xPos: Math.random() * Math.max(0, window.innerWidth - 150),
+    yPos: Math.random() * Math.max(0, window.innerHeight - 150),
+    xDir: -CRUISE_SPEED * 0.8,
+    yDir: CRUISE_SPEED * 0.6
+  };
+
+  function ghostMove() {
+    ghost.xPos += ghost.xDir;
+    ghost.yPos += ghost.yDir;
+
+    const maxX = window.innerWidth - img.offsetWidth;
+    const maxY = window.innerHeight - img.offsetHeight;
+    if (ghost.xPos < 0 || ghost.xPos > maxX) {
+      ghost.xDir *= -1;
+      ghost.xPos = Math.max(0, Math.min(ghost.xPos, maxX));
+    }
+    if (ghost.yPos < 0 || ghost.yPos > maxY) {
+      ghost.yDir *= -1;
+      ghost.yPos = Math.max(0, Math.min(ghost.yPos, maxY));
+    }
+
+    img.style.left = ghost.xPos + "px";
+    img.style.top = ghost.yPos + "px";
+    requestAnimationFrame(ghostMove);
+  }
+  requestAnimationFrame(ghostMove);
+}
+
+const chaosTiers = [
+  { at: 3 * 60, message: "Chaos level 1: decoy buttons", apply: addDecoys },
+  { at: 5 * 60, message: "Chaos level 2: is the room spinning?", apply: startSpin },
+  { at: 15 * 60, message: "Chaos level 3: a friend joins you", apply: spawnGhost }
+];
+
+let appliedTiers = 0;
+
+function checkChaos(silent) {
+  while (appliedTiers < chaosTiers.length && time >= chaosTiers[appliedTiers].at) {
+    const tier = chaosTiers[appliedTiers++];
+    tier.apply();
+    if (!silent) announce(tier.message);
+  }
+}
+
+checkChaos(true); //restore tiers after a reload
+setInterval(checkChaos, 1000);
+
+/* ---------- Idle detection ---------- */
+
+const IDLE_AFTER_MS = 30 * 1000;
+const SHOUT_EVERY_MS = 6 * 1000;
+
+const idleMessages = [
+  "ARE YOU EVEN THERE?",
+  "HELLO?? THE THESIS IS CALLING",
+  "I CAN WAIT ALL DAY. SO CAN YOUR DEADLINE.",
+  "BLINK IF YOU NEED HELP",
+  "THE GIF IS WATCHING YOU"
+];
+
+const shout = document.createElement("div");
+shout.id = "shout";
+document.body.appendChild(shout);
+
+let lastActivity = Date.now();
+let lastShout = 0;
+let shouting = false;
+
+function onActivity() {
+  lastActivity = Date.now();
+  if (shouting) {
+    shouting = false;
+    shout.classList.remove("show");
+  }
+}
+
+["pointermove", "pointerdown", "keydown", "wheel", "touchstart"].forEach(function(name) {
+  window.addEventListener(name, onActivity, { passive: true });
+});
+
+function shoutSomething() {
+  shout.textContent = idleMessages[Math.floor(Math.random() * idleMessages.length)];
+  shout.classList.add("show");
+  shouting = true;
+  lastShout = Date.now();
+}
+
+setInterval(function() {
+  if (document.hidden) return;
+  const now = Date.now();
+  if (now - lastActivity > IDLE_AFTER_MS && now - lastShout > SHOUT_EVERY_MS) {
+    shoutSomething();
+  }
+}, 1000);
