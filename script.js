@@ -23,10 +23,10 @@ setInterval(changeTitleColor, 2000);
 
 btnContainer.addEventListener("mouseover", function(event) {
   let topPos = Math.floor(
-    Math.random() * (window.innerHeight - btnContainer.offsetHeight)
+    Math.random() * Math.max(0, window.innerHeight - btnContainer.offsetHeight)
   );
   let leftPos = Math.floor(
-    Math.random() * (window.innerWidth - btnContainer.offsetWidth)
+    Math.random() * Math.max(0, window.innerWidth - btnContainer.offsetWidth)
   );
 
   btnContainer.style.transform = "translateX(0)";
@@ -164,6 +164,9 @@ const rageLoadedArr = preload(rageGifArr);
 
 const gif = document.getElementById("gif");
 
+const CRUISE_SPEED = 3; //normal px per frame
+const FRICTION = 0.985; //how fast a thrown gif slows back to cruise speed
+
 gif.speed = 2;
 gif.xPos = gif.getBoundingClientRect().left;
 gif.yPos = gif.getBoundingClientRect().top;
@@ -176,6 +179,14 @@ let opacity = 0;
 
 function gifMove() {
   if (!gif.moving) {
+    /*A thrown gif slows down until it is back to cruise speed*/
+    let speed = Math.hypot(gif.xDir, gif.yDir);
+    if (speed > CRUISE_SPEED) {
+      let factor = Math.max(CRUISE_SPEED / speed, FRICTION);
+      gif.xDir *= factor;
+      gif.yDir *= factor;
+    }
+
     gif.xPos += gif.xDir;
     gif.yPos += gif.yDir;
 
@@ -246,51 +257,70 @@ let oldX, oldY;
 let initialX, initialY;
 let mousePosX, mousePosY;
 
-gif.addEventListener("touchstart", function(event){
-  const clientX = event.touches[0].clientX;
-  const clientY = event.touches[0].clientY;
-
-  moveInit(clientX, clientY);
-}, false);
-
-gif.addEventListener("mousedown", function(event) {
+/*Pointer Events cover mouse, touch and pen. Capturing the pointer keeps
+  the drag alive even when it leaves the gif or the window.*/
+gif.addEventListener("pointerdown", function(event) {
+  if (event.button !== undefined && event.button !== 0) return;
+  gif.setPointerCapture(event.pointerId);
   moveInit(event.clientX, event.clientY);
 });
 
-let lastTouchX, lastTouchY;
-
-gif.addEventListener("touchmove", function(event){
-  const clientX = event.touches[0].clientX;
-  const clientY = event.touches[0].clientY;
-
-  lastTouchX = clientX;
-  lastTouchY = clientY;
-
-  moving(clientX, clientY);
-}, false);
-
-window.addEventListener("mousemove", function(event) {
+gif.addEventListener("pointermove", function(event) {
   moving(event.clientX, event.clientY);
 });
 
-gif.addEventListener("touchcancel", function(event){
-
-}, false);
-
-gif.addEventListener("touchend", function(event){
-  moveEnd(lastTouchX, lastTouchY);
-}, false);
-
-window.addEventListener("mouseup", function(event) {
+gif.addEventListener("pointerup", function(event) {
   moveEnd(event.clientX, event.clientY);
 });
 
+gif.addEventListener("pointercancel", function(event) {
+  moveEnd(event.clientX, event.clientY);
+});
+
+/*Keep the gif inside the window when it is resized*/
+window.addEventListener("resize", function() {
+  gif.xPos = Math.max(0, Math.min(gif.xPos, window.innerWidth - gif.offsetWidth));
+  gif.yPos = Math.max(0, Math.min(gif.yPos, window.innerHeight - gif.offsetHeight));
+  gif.style.left = gif.xPos + "px";
+  gif.style.top = gif.yPos + "px";
+});
+
+/*Throw physics: speed comes from how fast the pointer moved just before release*/
+const THROW_WINDOW_MS = 100;
+const MAX_THROW_SPEED = 30; //px per frame
+const FRAME_MS = 1000 / 60;
+let samples = [];
+
+function recordSample(x, y) {
+  const now = performance.now();
+  samples.push({ x: x, y: y, t: now });
+  while (samples.length > 1 && now - samples[0].t > THROW_WINDOW_MS) {
+    samples.shift();
+  }
+}
+
+/*Pointer velocity in px per frame, zero if it stopped before release*/
+function throwVelocity() {
+  if (samples.length < 2) return { x: 0, y: 0 };
+  const first = samples[0];
+  const last = samples[samples.length - 1];
+  const dt = last.t - first.t;
+  if (dt < 8 || performance.now() - last.t > THROW_WINDOW_MS) {
+    return { x: 0, y: 0 };
+  }
+  return {
+    x: (last.x - first.x) / dt * FRAME_MS,
+    y: (last.y - first.y) / dt * FRAME_MS
+  };
+}
 
 function moveInit(clientX, clientY){
   gif.moving = true;
   gif.className = "dragging";
   oldX = initialX = clientX;
   oldY = initialY = clientY;
+  samples = [];
+  recordSample(clientX, clientY);
 
   mousePosX = oldX - gif.getBoundingClientRect().left; //x position within the element.
   mousePosY = oldY - gif.getBoundingClientRect().top; //y position within the element.
@@ -311,6 +341,7 @@ function moving(clientX, clientY){
 
     oldX = newX;
     oldY = newY;
+    recordSample(clientX, clientY);
 
     squeeze(clientX, clientY);
 
@@ -422,35 +453,23 @@ function moveEnd(clientX, clientY){
       gif.xPos = oldX - mousePosX;
       gif.yPos = oldY - mousePosY;
 
-      let xDiff = clientX - initialX;
-      let yDiff = clientY - initialY;
+      let v = throwVelocity();
+      let speed = Math.hypot(v.x, v.y);
 
-      let directionX, directionY;
-
-      /*See if which direction the gif is going*/
-      if (xDiff < 0) {
-        directionX = -1;
-      } else {
-        directionX = 1;
+      if (speed > MAX_THROW_SPEED) {
+        v.x = v.x / speed * MAX_THROW_SPEED;
+        v.y = v.y / speed * MAX_THROW_SPEED;
+      } else if (speed < CRUISE_SPEED) {
+        /*Barely moved: cruise at normal speed, keeping the old heading if the pointer was still*/
+        let dx = speed < 0.01 ? gif.xDir : v.x;
+        let dy = speed < 0.01 ? gif.yDir : v.y;
+        let len = Math.hypot(dx, dy) || 1;
+        v.x = dx / len * CRUISE_SPEED;
+        v.y = dy / len * CRUISE_SPEED;
       }
 
-      if (yDiff < 0) {
-        directionY = -1;
-      } else {
-        directionY = 1;
-      }
-
-      /*Calculate the speed each direction should go*/
-      if (Math.abs(xDiff) < Math.abs(yDiff)) {
-        let procent = Math.abs(xDiff) / Math.abs(yDiff);
-
-        gif.xDir = directionX * (2 * gif.speed * procent);
-        gif.yDir = directionY * (2 * gif.speed * (1 - procent));
-      } else {
-        let procent = Math.abs(yDiff) / Math.abs(xDiff);
-        gif.xDir = directionX * (2 * gif.speed * (1 - procent));
-        gif.yDir = directionY * (2 * gif.speed * procent);
-      }
+      gif.xDir = v.x;
+      gif.yDir = v.y;
 
       /*Check if the gif is outside the bounds of the window*/
       if (gif.xPos + gif.offsetWidth > window.innerWidth) {
