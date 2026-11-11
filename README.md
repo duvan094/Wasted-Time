@@ -10,7 +10,5 @@ We will surely procrastinate even more so keep an eye out for even more features
 
 Click [here](https://wastedtime.jacobduvander.se/) to see the project in action.
 
-EDIT: The website is now down, we couldn't afford it without any donations anymore.
-
 Wisdom from Ernst Kirchsteiger:
 > Har det hänt någon gång att du nästan blivit förälskad i en sten?
