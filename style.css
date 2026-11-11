@@ -17,6 +17,7 @@ body {
   margin: 0;
   padding: 0;
   height: 100vh;
+  height: 100dvh;
   width: 100%;
   background: #aa0000;
   transition: background 1s ease-in-out, 1s opacity ease-out;
@@ -179,6 +180,7 @@ small.footer a {
   left: 50%;
   transform: translateX(-50%);
   width: 350px;
+  max-width: calc(100vw - 22px);
 }
 
 #message {
@@ -203,6 +205,7 @@ small.footer a {
   -webkit-user-select: none;
   -ms-user-select: none;
   cursor: grab;
+  touch-action: none; /*don't scroll the page while dragging on touch screens*/
 }
 
 #skew-wrapper {
@@ -275,7 +278,7 @@ small.footer a {
 @media(max-width:520px){
 
   body{
-
+    margin-top: 8px;
   }
 
   main{
@@ -285,26 +288,195 @@ small.footer a {
   }
 
   h1{
-    font-size:1.5em;
-    padding:1em;
+    font-size:1.15em;
+    padding:0.5em;
+    margin: 0.3em 0;
+  }
+
+  h2{
+    font-size: 1.1em;
+    margin: 0.3em 0;
   }
 
   #number {
     font-weight: 600;
     font-size: 2em;
+    margin: 0.2em 0;
   }
 
   button{
     width:100%;
+    font-size: 1em;
+    padding: 16px;
   }
 
   #gif {
-    max-width: 200px;
-    max-height: 200px;
+    max-width: 140px;
+    max-height: 140px;
   }
 
   small.footer {
     text-align: right;
+    padding: 10px;
+    font-size: 0.7em;
   }
 
+}
+
+/*Short screens, e.g. phones in landscape*/
+@media(max-height:480px){
+  h1{
+    font-size: 1em;
+    margin: 0.2em 0;
+  }
+
+  #number {
+    font-size: 1.6em;
+    margin: 0;
+  }
+
+  button{
+    padding: 10px;
+  }
+}
+
+/* ---------- Toast, popups, shout ---------- */
+
+#toast {
+  position: fixed;
+  top: 12px;
+  left: 50%;
+  transform: translate(-50%, -150%);
+  max-width: calc(100vw - 24px);
+  padding: 10px 18px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.8);
+  color: #fff;
+  z-index: 400;
+  pointer-events: none;
+  transition: transform 0.3s ease-out;
+  text-align: center;
+}
+
+#toast.show {
+  transform: translate(-50%, 0);
+}
+
+.popup-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 300;
+}
+
+.popup {
+  background: #fff;
+  color: #222;
+  border-radius: 8px;
+  padding: 22px;
+  width: 320px;
+  max-width: calc(100vw - 32px);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+  text-align: center;
+}
+
+.popup-text {
+  font-size: 1.2em;
+  font-weight: 700;
+  margin-bottom: 1em;
+}
+
+.popup button {
+  display: block;
+}
+
+#shout {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  width: min(90vw, 700px);
+  text-align: center;
+  font-size: clamp(1.6em, 7vw, 4em);
+  font-weight: 800;
+  color: #fff;
+  text-shadow: 0 4px 20px rgba(0, 0, 0, 0.8);
+  z-index: 250;
+  pointer-events: none;
+  transition: transform 0.2s ease-out;
+}
+
+#shout.show {
+  transform: translate(-50%, -50%) scale(1);
+  animation: shake 0.4s linear infinite;
+}
+
+@keyframes shake {
+  0%, 100% { margin-left: 0; }
+  25% { margin-left: -6px; }
+  75% { margin-left: 6px; }
+}
+
+/* ---------- Chaos tiers ---------- */
+
+.spin {
+  animation: spinWobble 6s ease-in-out infinite alternate;
+}
+
+@keyframes spinWobble {
+  from { transform: rotate(-6deg); }
+  to { transform: rotate(6deg); }
+}
+
+.ghost {
+  position: absolute;
+  z-index: 40;
+  max-width: 150px;
+  max-height: 150px;
+  opacity: 0.7;
+  pointer-events: none;
+  filter: hue-rotate(120deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skew, #red-overlay, .spin, #shout.show {
+    animation: none;
+  }
+}
+
+/* ---------- Controls ---------- */
+
+#controls {
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  display: flex;
+  gap: 8px;
+  z-index: 200;
+}
+
+#controls button {
+  width: auto;
+  margin: 0;
+  padding: 8px 12px;
+  font-size: 1.2em;
+  background: rgba(0, 0, 0, 0.45);
+  border: 2px solid transparent;
+  border-radius: 999px;
+  box-shadow: none;
+  text-transform: none;
+}
+
+#controls button:hover,
+#controls button:active {
+  background: rgba(0, 0, 0, 0.65);
+  border: 2px solid transparent;
+}
+
+#controls button.active,
+#controls button[aria-pressed="true"] {
+  border-color: #fff;
 }
